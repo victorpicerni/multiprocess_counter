@@ -18,7 +18,7 @@
 /*função para definir se o numero é primo ou nao*/
 //definindo numeros primos. Se o retorno for 0 o numero não é primo, se for 1 o numero é primo
 
-unsigned long int primo(int num){
+unsigned long int primo(unsigned long int num){
   if (num == 1 || num == 0)
     return 0;
   for (int i = 2 ; i < num ; i++){
