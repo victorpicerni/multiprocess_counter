@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/types.h> //define o tipo pid_t
 #include <unistd.h> //define fork
 #include <sys/wait.h> //define o waitpid
@@ -18,7 +19,7 @@
 /*função para definir se o numero é primo ou nao*/
 //definindo numeros primos. Se o retorno for 0 o numero não é primo, se for 1 o numero é primo
 
-unsigned long int primo(unsigned long int num){
+int primo(int num){
   if (num == 1 || num == 0)
     return 0;
   for (int i = 2 ; i < num ; i++){
@@ -30,6 +31,9 @@ unsigned long int primo(unsigned long int num){
 return 1;
 }
 
+void sigcont(){
+return;}
+
 
 int main() {
 /*definindo as variáveis para a memória compartilhada e pid*/  
@@ -37,7 +41,8 @@ int main() {
   int *mem_auxiliar;
   int *resultado;
   int *palavras_processadas;
-  pid_t pid;
+  int *pid_livre;
+  pid_t pid[100];
 
 /* Definir flags de protecao e visibilidade de memoria */
   int protecao = PROT_READ | PROT_WRITE;
@@ -45,17 +50,25 @@ int main() {
   
 /*definindo variaveis auxiliares*/
   int num;
+
   char c;
+
   int qte_palavras = 0;
-  int total_processos = 0;
-  int status;
+
+  int processos_andamento;
+
 
 /*criando duas memorias compartilhadas, uma para o vetor de numeros e outra para os valores de reultados e informações de leitura*/
+
   mem_compartilhada = (int*)mmap(NULL, sizeof(int)*1000, protecao,visibilidade,0,0);
+
   mem_auxiliar = (int*)mmap(NULL, sizeof(int)*1000, protecao,visibilidade,0,0);
+
   resultado = &(mem_auxiliar[0]);
+
   palavras_processadas = &(mem_auxiliar[1]);
-  (*palavras_processadas) = 0;
+
+  pid_livre = &(mem_auxiliar[2]);
   
 /*criando o vetor de numeros*/
   do{
@@ -69,27 +82,33 @@ int main() {
 
 /*haverá um processo para cada palavra, de forma que ao chegar no maximo de processos, será necessário
 esperar até que um processo tenha sido terminado*/
-  for (int i = 0; i<qte_palavras; i++){
-  	total_processos++;
-	for (;total_processos>=MAX_PROCESSOS;total_processos--)
-	{
-	wait(&status);	
-	waitpid(pid,NULL,0);
-	}
+  int pai = getpid();
 
-	pid = fork();/*inicia novos processos*/
+  for (int i = 0; i < qte_palavras; i++) {
+	
+	pid[i] = fork();
 
-	if (pid==0) {/*para os processos filhos, temos pid = 0*/
+	//signal(SIGCONT, sigcont);
+	waitpid(pid[i],0,0);
+	(*resultado)+= primo(mem_compartilhada[(*palavras_processadas)]); /*identifica e soma os primos*/
+	(*palavras_processadas)++;
+	//kill((*pid_livre), SIGCONT);	
+	//(*pid_livre) = meu_pid;
 			
-	(*resultado)+=(primo(mem_compartilhada[(*palavras_processadas)]));/*irá verificar se o numero cujo processo buscou na memoria compartilhada é primo*/
-	(*palavras_processadas)++;/*avança na memória compartilhada*/
-	exit(0);/*termina o processo*/
+	if (getpid() != pai){
+		exit(0);  
 	}
-}
+	
+  }
 
-while ((wait(&status) > 0));/*espera todos os processos terminarem*/
+	
+  
+  
 
-printf("%d\n", (*resultado));/*printa o resultado*/
+  
+  printf("%d\n", (*resultado));/*printa o resultado*/
+
+
   return 0;/*finaliza o programa*/
 }
 
