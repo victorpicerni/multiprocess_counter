@@ -31,17 +31,12 @@ int primo(int num){
 return 1;
 }
 
-void sigcont(){
-return;}
-
-
 int main() {
 /*definindo as variáveis para a memória compartilhada e pid*/  
   int *mem_compartilhada;
   int *mem_auxiliar;
   int *resultado;
   int *palavras_processadas;
-  int *pid_livre;
   pid_t pid[100];
 
 /* Definir flags de protecao e visibilidade de memoria */
@@ -55,8 +50,6 @@ int main() {
 
   int qte_palavras = 0;
 
-  int processos_andamento;
-
 
 /*criando duas memorias compartilhadas, uma para o vetor de numeros e outra para os valores de reultados e informações de leitura*/
 
@@ -68,7 +61,6 @@ int main() {
 
   palavras_processadas = &(mem_auxiliar[1]);
 
-  pid_livre = &(mem_auxiliar[2]);
   
 /*criando o vetor de numeros*/
   do{
@@ -88,13 +80,12 @@ esperar até que um processo tenha sido terminado*/
 	
 	pid[i] = fork();
 
-	//signal(SIGCONT, sigcont);
+
 	waitpid(pid[i],0,0);
 	(*resultado)+= primo(mem_compartilhada[(*palavras_processadas)]); /*identifica e soma os primos*/
 	(*palavras_processadas)++;
-	//kill((*pid_livre), SIGCONT);	
-	//(*pid_livre) = meu_pid;
-			
+	
+	/*sair se nao for o processo pai*/		
 	if (getpid() != pai){
 		exit(0);  
 	}
